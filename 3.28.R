@@ -65,7 +65,6 @@ W_t <- rep(1, N)
 W_SIS_RR <- W_t[1]
 
 t <- 2
-count <- c()
 while (t <= n) {
   X_t <- rpair(X_t, t, N)$X_t
   U_t <-
@@ -77,20 +76,17 @@ while (t <= n) {
   W_t <- W_t * U_t
   W_t.bar <- mean(W_t)
   k_t <- floor(W_t / W_t.bar)
-  N_r_t <- N
-  p.resample_t <- rep(1 / N_r_t, N_r_t)
+  N_r_t <- N - sum(k_t)
+  # The resampling probability
+  p.resample_t <- (W_t / W_t.bar - k_t) / N_r_t
+  
+  # The index of sample corresponding to its resample number for each X_t
   index.all_t <- c()
-  
-  if (!is.na(k_t[1])) {
-    count <- c(count, t)
-    N_r_t <- N - sum(k_t)
-    p.resample_t <- (W_t / W_t.bar - k_t) / N_r_t
-    for (k in 1:max(k_t)) {
-      index.all_t <- c(index.all_t, which(k_t >= k))
-      k <- k + 1
-    }
+  for (k in 1:max(k_t)) {
+    index.all_t <- c(index.all_t, which(k_t >= k))
+    k <- k + 1
   }
-  
+  # Ensure the exception of N_r_t equals to 0 being considered
   if (N_r_t > 0) {
     index.resample_t <-
       sample(
@@ -102,7 +98,9 @@ while (t <= n) {
     index.all_t <- c(index.all_t, index.resample_t)
   }
   
+  # Record X and W for each t
   X_SIS_RR <- rbind(X_SIS_RR, X_t)[, index.all_t]
   W_SIS_RR <- c(W_SIS_RR, W_t.bar)
+  W_t <- rep(W_t.bar, N)
   t <- t + 1
 }
