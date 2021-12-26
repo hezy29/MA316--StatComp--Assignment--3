@@ -1,3 +1,6 @@
+## ---- Packages ----
+library(foreach)
+library(doParallel)
 ## ---- Parameters ----
 phi_1 <- 0.6
 sigma2_n <- 1 / 6
@@ -57,50 +60,80 @@ while (t <= n) {
 }
 
 ## ---- Q4 ----
-X_SIS_RR <- rnorm(n = N,
-                  mean = y[1],
-                  sd = sqrt(sigma2_n))
-X_t <- X_SIS_RR
-W_t <- rep(1, N)
-W_SIS_RR <- W_t[1]
-
-t <- 2
-while (t <= n) {
-  X_t <- rpair(X_t, t, N)$X_t
-  U_t <-
-    pnorm(
-      q = y[t],
-      mean = A * cos(f * t + X_t),
-      sd = sqrt(sigma2_eps)
-    )
-  W_t <- W_t * U_t
-  W_t.bar <- mean(W_t)
-  k_t <- floor(W_t / W_t.bar)
-  N_r_t <- N - sum(k_t)
-  # The resampling probability
-  p.resample_t <- (W_t / W_t.bar - k_t) / N_r_t
-  
-  # The index of sample corresponding to its resample number for each X_t
-  index.all_t <- c()
-  for (k in 1:max(k_t)) {
-    index.all_t <- c(index.all_t, which(k_t >= k))
-    k <- k + 1
+residual_resampling <- function(y) {
+  X_SIS_RR <- runif(N, min = -1, max = 1)
+  pi_1 <- function(X_1) {
+    out <- exp(-(y[1] - A * cos(f * 1 + X_1)) ^ 2 / (2 * sigma2_eps))
+    return(out)
   }
-  # Ensure the exception of N_r_t equals to 0 being considered
-  if (N_r_t > 0) {
-    index.resample_t <-
-      sample(
-        x = 1:N,
-        size = N_r_t,
-        replace = TRUE,
-        prob = p.resample_t
+  X_t <- X_SIS_RR
+  W_t <- pi_1(X_1 = X_t) / 2
+  W_SIS_RR <- mean(W_t)
+  
+  t <- 2
+  while (t <= n) {
+    X_t <- rpair(X_t, t, N)$X_t
+    U_t <-
+      pnorm(
+        q = y[t],
+        mean = A * cos(f * t + X_t),
+        sd = sqrt(sigma2_eps)
       )
-    index.all_t <- c(index.all_t, index.resample_t)
+    W_t <- W_t * U_t
+    W_t.bar <- mean(W_t)
+    k_t <- floor(W_t / W_t.bar)
+    N_r_t <- N - sum(k_t)
+    # The resampling probability
+    p.resample_t <- (W_t / W_t.bar - k_t) / N_r_t
+    
+    # The index of sample corresponding to its resample number for each X_t
+    index.all_t <- c()
+    for (k in 1:max(k_t)) {
+      index.all_t <- c(index.all_t, which(k_t >= k))
+      k <- k + 1
+    }
+    # Ensure the exception of N_r_t equals to 0 being considered
+    if (N_r_t > 0) {
+      index.resample_t <-
+        sample(
+          x = 1:N,
+          size = N_r_t,
+          replace = TRUE,
+          prob = p.resample_t
+        )
+      index.all_t <- c(index.all_t, index.resample_t)
+    }
+    
+    # Record X and W for each t
+    X_SIS_RR <- rbind(X_SIS_RR, X_t)[, index.all_t]
+    W_SIS_RR <- c(W_SIS_RR, W_t.bar)
+    W_t <- rep(W_t.bar, N)
+    t <- t + 1
   }
-  
-  # Record X and W for each t
-  X_SIS_RR <- rbind(X_SIS_RR, X_t)[, index.all_t]
-  W_SIS_RR <- c(W_SIS_RR, W_t.bar)
-  W_t <- rep(W_t.bar, N)
-  t <- t + 1
+  out <- list(X = X_SIS_RR, W = W_SIS_RR)
+  return(out)
 }
+SIS_RR <- residual_resampling(y)
+
+## ---- Q5 ----
+X.posterior <- rowMeans(SIS_RR$X)
+
+## ---- Q6 ----
+X.SE <- sqrt((rowMeans(SIS_RR$X ^ 2) - rowMeans(SIS_RR$X) ^ 2) / N)
+
+## ---- Q7 ----
+M <- 400
+clnum <- detectCores(logical = FALSE)
+cl <- makeCluster(mc <- getOption("cl.cores", clnum))
+registerDoParallel(cl)
+
+SE <- function(y) {
+  SIS_RR <- residual_resampling(y)
+  out <- sqrt((rowMeans(SIS_RR$X ^ 2) - rowMeans(SIS_RR$X) ^ 2) / N)
+  return(out)
+}
+
+SE.M <-
+  foreach(exponent = 1:M, .combine = rbind) %dopar% SE(y)
+
+stopImplicitCluster()
