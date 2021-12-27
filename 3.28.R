@@ -1,6 +1,7 @@
 ## ---- Packages ----
 library(foreach)
 library(doParallel)
+
 ## ---- Parameters ----
 phi_1 <- 0.6
 sigma2_n <- 1 / 6
