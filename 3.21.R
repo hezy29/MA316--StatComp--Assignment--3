@@ -44,7 +44,6 @@ beta.bar
 beta.SE <- sqrt(var(beta.seq[-1:-2e3]) / 8e3)
 beta.SE
 
-plot(beta.seq, type = 'l')
 
 ## ---- Different Init ----
 # Generate Different Initial Values
@@ -92,6 +91,8 @@ beta.SE.all <- data.frame(
 beta.SE.all
 
 # Plot the beta sequence
+par(mfrow = c(2, 2))
+plot(beta.seq, type = 'l')
 plot(beta.seq_1, type = 'l')
 plot(beta.seq_2, type = 'l')
 plot(beta.seq_3, type = 'l')
