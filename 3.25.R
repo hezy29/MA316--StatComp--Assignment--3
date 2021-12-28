@@ -1,4 +1,7 @@
+## ---- Gibbs ----
+## Packages
 library(ggplot2)
+library(gridExtra)
 
 ## Parameters
 n <- 20
@@ -9,7 +12,8 @@ N <- 1e4
 ## Target Distribution
 ptd <- function(n, x, y, alpha, beta) {
   out <-
-    choose(n, x) * y ^ (x + alpha - 1) * (1 - y) ^ (n - x + beta - 1)
+    choose(n, x) * y ^ (x + alpha - 1) * 
+    (1 - y) ^ (n - x + beta - 1)
   out
 }
 
@@ -31,12 +35,16 @@ for (i in 1:N) {
 
 ## Histogram
 data <- data.frame(X, Y)
-ggplot(data = data, mapping = aes(x = Y)) + geom_histogram(binwidth = 0.01)
+p1 <-
+  ggplot(data = data, mapping = aes(x = Y)) + 
+  geom_histogram(binwidth = 0.01)
 
 ## Density of Beta(alpha,beta)
 seq_x <- seq(0, 1, length = 100)
-qplot(
+p2 <- qplot(
   x = seq_x,
   y = dbeta(seq_x, shape1 = alpha, shape2 = beta),
   geom = "line"
 )
+
+grid.arrange(p1, p2, nrow = 2)
