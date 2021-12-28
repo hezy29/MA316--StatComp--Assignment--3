@@ -38,22 +38,26 @@ beta.seq <- rmh(x, 1e4)
 
 # Calculate the posterior mean estimate of beta
 beta.bar <- mean(beta.seq[-1:-2e3])
+beta.bar
 
 # Calculate the standard error of beta
 beta.SE <- sqrt(var(beta.seq[-1:-2e3]) / 8e3)
+beta.SE
 
 plot(beta.seq, type = 'l')
 
 ## ---- Different Init ----
 # Generate Different Initial Values
 ini.val <- function(m = 250, n = 5) {
-  out <- c()
-  for (i in 1:(n - 1)) {
-    samp_i <- sample(1:m, size = 1, prob = rep(1 / m, m))
-    m <- m - samp_i
-    out <- c(out, samp_i)
-  }
-  out <- c(out, m)
+  out <-
+    diff(c(0, sort(
+      sample(
+        x = 1:m,
+        size = 4,
+        replace = FALSE,
+        prob = rep(1 / m, m)
+      )
+    ), m))
   return(out)
 }
 
