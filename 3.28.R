@@ -2,14 +2,15 @@
 library(foreach)
 library(doParallel)
 
-## ---- Parameters ----
+## ---- Q1 ----
+## Parameters
 phi_1 <- 0.6
 sigma2_n <- 1 / 6
 A <- 320
 f <- 1.072 * 1e7
 sigma2_eps <- 1
 
-## ---- Generating Function ----
+## Generating Function
 rpair <- function(X_old, t, N) {
   eta_new <- rnorm(n = N,
                    mean = 0,
@@ -23,7 +24,7 @@ rpair <- function(X_old, t, N) {
   return(out)
 }
 
-## ---- Q1 ----
+
 X_0 <- 0
 n <- 128
 t <- 1
@@ -38,9 +39,7 @@ while (t <= n) {
 
 ## ---- Q2 ----
 N <- 1e4
-X_SIS <- rnorm(n = N,
-               mean = y[1],
-               sd = sqrt(sigma2_n))
+X_SIS <- runif(n = 1, min = -1, max = 1)
 X_t <- X_SIS
 W_t <- rep(1, N)
 W_SIS <- rbind(W_1 = W_t)
@@ -60,11 +59,15 @@ while (t <= n) {
   t <- t + 1
 }
 
+## ---- Q3 ----
+head(W_SIS[, 1:5],10)
+
 ## ---- Q4 ----
 residual_resampling <- function(y) {
   X_SIS_RR <- runif(N, min = -1, max = 1)
   pi_1 <- function(X_1) {
-    out <- exp(-(y[1] - A * cos(f * 1 + X_1)) ^ 2 / (2 * sigma2_eps))
+    out <- exp(-(y[1] - A * cos(f * 1 + X_1)) ^ 2 /
+                 (2 * sigma2_eps))
     return(out)
   }
   X_t <- X_SIS_RR
@@ -87,7 +90,8 @@ residual_resampling <- function(y) {
     # The resampling probability
     p.resample_t <- (W_t / W_t.bar - k_t) / N_r_t
     
-    # The index of sample corresponding to its resample number for each X_t
+    # The index of sample corresponding to its
+    # resample number for each X_t
     index.all_t <- c()
     for (k in 1:max(k_t)) {
       index.all_t <- c(index.all_t, which(k_t >= k))
