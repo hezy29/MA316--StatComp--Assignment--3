@@ -1,0 +1,172 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{enumerate}
+\usepackage{amsmath}
+
+\title{MA316 Assignment 3}
+\author{18343040 Ziyang He}
+\date{\today}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\maketitle
+
+\section{Exercise 3.21}
+
+\paragraph{Question}
+In example $18.2$, let $(x_1,x_2,x_3,x_4,x_5)=(82,72,45,34,17)$. Choose the appropriate warm-up period and simulation, and use R to calculate the posterior mean estimate of $\beta$. Starting from different initial values, do a few more times to investigate the size of the estimated error.
+
+\paragraph{Solution}
+Example $18.2$ introduces a Bayesian financial problem. Assuming that there are $5$ stocks with $n = 250$ trading days' yield records, let $X_i$ denotes the number of times the $i$-th stock's yield has the highest return rate in $n$ trading days. Suppose that $X_1,\dots,X_5)$ follows a multinomial distribution with probability
+$$
+\textbf{p}=(\frac{1}{3},\frac{1-\beta}{3},\frac{1-2\beta}{3},\frac{2\beta}{3},\frac{\beta}{3}),
+$$
+where $\beta \in (0,0.5)$ is unknown. Assuming that $\beta$ has a prior distribution $p_0(\beta) \sim U(0,0.5)$, the posterior distribution of $\beta$ is
+$$
+\begin{aligned}
+    &f(\beta|x_1,\dots,x_5) \propto p(x_1,\dots,x_5|\beta) p_0(\beta)\\
+    \propto &(1 - \beta)^{x_2} (1 - 2\beta)^{x_3} \beta^{x_4+x_5} I_{(0,0.5)}(\beta) = \widetilde{\pi}(\beta). 
+\end{aligned}
+$$
+
+Due to the difficulty of sampling directly from the posterior distribution of $\beta$, use Metropolis-Hasting Sampling (MH method) to generate a sequence of $\beta$. Suppose we have $\beta^{(t)}$, set trial sampling distribution $T(y|\beta^{(t)})$ as $U(0,0.5)$,
+$$
+r(\beta^{(t)},y) = \min{\left(1,\frac{\widetilde{\pi}(y)}{\widetilde{\pi}(\beta^{(t)})}\right)},
+$$
+sample y from $U(0, 0.5)$ and accept $\beta(t+1) = y$ with probability $r(\beta(t), y)$.
+
+The following part shows the R codes for calculating the posterior mean estimate and the standard error of $\beta$ using the default initial values. The warm-up period is set to be the first 20\% of the iteration. 
+<<echo=FALSE, cache=FALSE>>=
+read_chunk("3.21.R")
+@
+
+<<Default>>=
+
+@
+
+In order to investigate the estimated error of different initial values, randomly generate three sets for simulation. The R codes are shown as below. 
+
+<<Different Init>>=
+
+@
+
+From the results above we can see that the posterior mean estimates of $\beta$ are related to the initial values, while the standard error of the estimates are basically the same. 
+
+\section{Exercise 3.25}
+
+\paragraph{Question}
+In example $18.5$, let $n=20,\alpha=\beta=0.5$. Generate a Gibbs sampler of $(X,Y)$, and compare the histogram of $Y$ and the probability density function of $Beta(\alpha,\beta)$. 
+
+\paragraph{Solution}
+The target distribution is
+$$
+\pi(x,y) \propto C_n^x y^{x + \alpha - 1} (1 - y)^{n - x + \beta - 1}, x = 0, 1, \dots, n, 0 \leq y \leq 1,
+$$
+therefore $X|Y \sim B(n,y), Y|X \sim Beta(x + \alpha, n - x + \beta)$. Notice that the marginal distribution of $Y$ is $Beta(\alpha, \beta)$, hence use Gibbs Sampling to generate a sample sequence of $(X,Y)$. 
+
+The following part shows the R codes for using Gibbs Sampling to generate the sample sequence. 
+<<echo=FALSE, cache=FALSE>>=
+read_chunk("3.25.R")
+@
+
+<<Gibbs>>=
+
+@
+As can be seen, the shapes of both histogram and probability density function are basically the same. 
+
+\section{Exercise 3.28}
+
+\paragraph{Question}
+In phase modulation communication, consider the following state space model
+$$
+\begin{aligned}
+    X_t&=\phi_1 X_{t-1} + \eta_t, \eta_t \sim N(0,\sigma_{\eta}^2),t=1,2,\dots,n,\\
+    y_t&=A\cos(ft+X_t)+\varepsilon_t,\varepsilon_t \sim N(0,\sigma_{\varepsilon}^2),t=1,2,\dots,n,
+\end{aligned}
+$$
+where $\phi_1=0.6,\sigma_{\eta}^2=1/6,A=320,f=1.072\times 10^7,\sigma_{\varepsilon}^2=1$. $(y_1,\dots,y_n)$ are the observed values, $X_1, \dots, X_n)$ are unobservable random variables.
+
+\begin{enumerate}[(1)]
+    \item Let $X_0=0, n=128$, generate $(X_t, y_t), t = 1, 2, \dots, n$. 
+    \item Design the SIS algorithm to generate appropriate weighted samples of $X_1, \dots, X_n$ under the conditions of known $y_1, \dots, y_n$. Independently generate $N=10000$ sets and use the forward step of the above state space model. 
+    \item Consider the distribution of the obtained weights $\{ W_i \}$. 
+    \item Conduct Residual Resampling on every step of the SIS. 
+    \item According to the posterior mean method, use the above improved sampling to estimate $(X_1, \dots, X_n)$. 
+    \item For each $X_t$, calculate the standard error of the posterior estimate. 
+    \item Repeat the estimation process for $M = 400$ times independently, calculate the new estimated standard error from $M$ different posterior estimates, and compare with the result obtained in (6).
+\end{enumerate}
+
+\paragraph{Solution}
+\begin{enumerate}[(1)]
+    \item Simply generate the sequence of $(X,Y)$ by the equations of the state space model. The following R codes accomplish the task. 
+    <<echo=FALSE, cache=FALSE>>=
+    read_chunk("3.28.R")
+    @
+    
+    <<Q1>>=
+    
+    @
+    \item This is a filter smoothing problem. Given $y_1, \dots, y_n$, the posterior sample can be produced using SIS algorithm. Let the trial sampling density be $g_t(x_t|\textbf{x}_{t-1}) = q_t(x_t|x_{t-1})$ (Markov hypothesis). For $t = 1, \pi_1(x) \propto f_1(y_1|x_1) p(x_1)$, where $p(x_1)$ is the prior probability density function. Sample $X_1 \sim g_1(x_1)$, and let $g_1(x_1) = \pi_1(x_1)$ if possible. 
+    
+    In this state space model, suppose the prior distribution of $X_1$ to be $U(-1, 1)$. Due to the difficulty of sampling $X_1$ from $\pi_1(x_1)$, we hereby just simplify the situation and choose $g_1(x_1) = p(x_1)$. 
+    
+    The following R codes show the procedure to independently generate $N = 10000$ weighted samples using the sequential importance sampling. 
+    
+    <<Q2>>=
+    
+    @
+    \item The following part shows the first ten weights of the first five streams. 
+    
+    <<Q3>>=
+    
+    @
+    Notice that the weights quickly converge to $0$ in the first five streams. Actually, all the weights converge to $0$, which inspires us to improve the SIS algorithm by adjusting the weights in each step, leading to residual resampling. 
+    \item The residual resampling is more efficient, since the weight of each stream is adjusted to be the same, and has a smaller simulation error. Shown as below are the R codes for residual resampling. 
+    
+    <<Q4>>=
+    
+    @
+    \item Since residual resampling has adjusted the weight of each stream to be the same, the posterior mean estimate of $X_i$ is
+    $$
+    X_i^* = \frac{1}{N} \sum_{j = 1}^N X_i^{(j)}. 
+    $$
+    
+    <<Q5>>=
+    
+    @
+    \item The standard error of each $X_t$ is defined as
+    $$
+    SE(X_t) = \sqrt{\frac{Var(X_t)}{N}} 
+    $$
+    
+    <<Q6>>=
+    
+    @
+    \item To repeat the process for $M = 400$ times independently, it's not efficient to use the normal for loop. Hereby uses the paralleled computing package \textsc{foreach} and \textsc{doParallel} to improve the computing performance. 
+    
+    <<echo=TRUE,cache=FALSE>>=
+    library(foreach)
+    library(doParallel)
+    M <- 400
+    clnum <- detectCores(logical = FALSE)
+    cl <- makeCluster(mc <- getOption("cl.cores", clnum))
+    registerDoParallel(cl)
+    
+    SE <- function(y) {
+      SIS_RR <- residual_resampling(y)
+      out <- sqrt((rowMeans(SIS_RR$X ^ 2) - rowMeans(SIS_RR$X) ^ 2) / N)
+      return(out)
+    }
+    
+    SE.M <-
+      foreach(exponent = 1:M, .combine = rbind) %dopar% SE(y)
+    
+    stopImplicitCluster()
+    @
+    Regretfully the overleaf has some issues with the compile process and couldn't compile the the pipe operator '\%' after words. However the paralleled experiment is a successful try and the standard error are likely the same. The original codes are given separately for reproduction. 
+    
+\end{enumerate}
+
+
+\end{document}
