@@ -40,8 +40,13 @@ while (t <= n) {
 ## ---- Q2 ----
 N <- 1e4
 X_SIS <- runif(n = 1, min = -1, max = 1)
+pi_1 <- function(X_1) {
+  out <- exp(-(y[1] - A * cos(f * 1 + X_1)) ^ 2 /
+               (2 * sigma2_eps))
+  return(out)
+}
 X_t <- X_SIS
-W_t <- rep(1, N)
+W_t <- pi_1(X_1 = X_t) / 2
 W_SIS <- rbind(W_1 = W_t)
 
 t <- 2
@@ -65,11 +70,6 @@ head(W_SIS[, 1:5],10)
 ## ---- Q4 ----
 residual_resampling <- function(y) {
   X_SIS_RR <- runif(N, min = -1, max = 1)
-  pi_1 <- function(X_1) {
-    out <- exp(-(y[1] - A * cos(f * 1 + X_1)) ^ 2 /
-                 (2 * sigma2_eps))
-    return(out)
-  }
   X_t <- X_SIS_RR
   W_t <- pi_1(X_1 = X_t) / 2
   W_SIS_RR <- mean(W_t)
