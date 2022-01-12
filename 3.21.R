@@ -1,4 +1,6 @@
 ## ---- Default ----
+N <- 1e3
+prep <- 1:(0.2 * N)
 # set random seed
 set.seed(10)
 
@@ -34,14 +36,14 @@ rmh <- function(x, iter) {
 }
 
 # Calculate the beta sequence
-beta.seq <- rmh(x, 1e4)
+beta.seq <- rmh(x, N)
 
 # Calculate the posterior mean estimate of beta
-beta.bar <- mean(beta.seq[-1:-2e3])
+beta.bar <- mean(beta.seq[-prep])
 beta.bar
 
 # Calculate the standard error of beta
-beta.SE <- sqrt(var(beta.seq[-1:-2e3]) / 8e3)
+beta.SE <- sqrt(var(beta.seq[-prep]) / (0.8 * N))
 beta.SE
 
 
@@ -61,14 +63,14 @@ ini.val <- function(m = 250, n = 5) {
 }
 
 # Calculate the beta sequence
-beta.seq_1 <- rmh(x_1 <- ini.val(), 1e4)
-beta.seq_2 <- rmh(x_2 <- ini.val(), 1e4)
-beta.seq_3 <- rmh(x_3 <- ini.val(), 1e4)
+beta.seq_1 <- rmh(x_1 <- ini.val(), N)
+beta.seq_2 <- rmh(x_2 <- ini.val(), N)
+beta.seq_3 <- rmh(x_3 <- ini.val(), N)
 
 # Calculate the posterior mean estimate of beta
-beta.bar_1 <- mean(beta.seq_1[-1:-2e3])
-beta.bar_2 <- mean(beta.seq_2[-1:-2e3])
-beta.bar_3 <- mean(beta.seq_3[-1:-2e3])
+beta.bar_1 <- mean(beta.seq_1[-prep])
+beta.bar_2 <- mean(beta.seq_2[-prep])
+beta.bar_3 <- mean(beta.seq_3[-prep])
 beta.bar.all <-
   data.frame(
     Default = beta.bar,
@@ -79,9 +81,9 @@ beta.bar.all <-
 beta.bar.all
 
 # Calculate the standard error of beta
-beta.SE_1 <- sqrt(var(beta.seq_1[-1:-2e3]) / 8e3)
-beta.SE_2 <- sqrt(var(beta.seq_2[-1:-2e3]) / 8e3)
-beta.SE_3 <- sqrt(var(beta.seq_3[-1:-2e3]) / 8e3)
+beta.SE_1 <- sqrt(var(beta.seq_1[-prep]) / (0.8 * N))
+beta.SE_2 <- sqrt(var(beta.seq_2[-prep]) / (0.8 * N))
+beta.SE_3 <- sqrt(var(beta.seq_3[-prep]) / (0.8 * N))
 beta.SE.all <- data.frame(
   Default = beta.SE,
   Rand_1 = beta.SE_1,
